@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="org.eclipse.wst.jsdt.ui.JavaSearchResultPage">
+		<item key="org.eclipse.wst.jsdt.search.resultpage.limit_enabled" value="TRUE"/>
+		<item key="org.eclipse.wst.jsdt.search.resultpage.limit" value="1000"/>
+	</section>
+	<section name="">
+		<item key="org.eclipse.wst.jsdt.search.resultpage.limit_enabled" value="TRUE"/>
+		<item key="org.eclipse.wst.jsdt.search.resultpage.limit" value="1000"/>
+	</section>
+</section>

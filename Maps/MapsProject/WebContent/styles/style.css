@@ -1,0 +1,28 @@
+@CHARSET "ISO-8859-1";
+//Standard Stuff taken from Google Maps Api suggestions
+html { height: 100% }
+body { 
+	height: 100%;
+	text-align: left;
+	font: normal 13px/18px "Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+div,h2{padding:0px; margin:0}
+
+#container{margin:5px 5px 5px 5px}
+#map_canvas {
+  position: absolute;
+  top: 100px;
+  left: 500px;
+  width: 750px;
+  height: 600px;
+}
+
+.field{ margin: 0 0 20px }
+
+#legendContainer, #constraintContainer{
+	border: 1px solid #CCC;
+	width:300px;	
+}
+
+

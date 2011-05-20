@@ -1,0 +1,16 @@
+Function.prototype.method=function(name,func){
+	if(!this.prototype[name]){
+		this.prototype[name]=func;
+		return this;
+	}
+};
+
+String.method("format", function() {
+	  var s = arguments[0];
+	  for (var i = 0; i < arguments.length - 1; i++) {       
+	    var reg = new RegExp("\\{" + i + "\\}", "gm");             
+	    s = s.replace(reg, arguments[i + 1]);
+	  }
+
+	  return s;
+});

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="http://code.google.com/p/jshashtable/source/browse/trunk/hashtable.js"></script>
+<script type="text/javascript" src="../scripts/util.js"></script>
+<script type="text/javascript" src="../scripts/geoDistance.js"></script>
+<script type="text/javascript" src="../scripts/myScript.js"></script>
+
+<link rel="stylesheet" type="text/css" href="../styles/style.css" />
+<link rel="stylesheet" type="text/css" href="../styles/inputThemes.css" />  
+<title>Constrained Maps</title>
+</head>
+<body>
+	<div id="container">
+		<h2>Search Area</h2>    
+	    <div class="field"> 
+	      <label>Center:</label>
+	       <input id="txt_center" type="text" />
+	    </div>
+	    
+	    <div class="field"> 
+	      <label>Zoom</label>
+	      <input id="txt_zoom" type="text" />
+	    </div>
+	    <div class="field"> 
+	      <button id="btn_setSearchArea" type="button">Set Search Area:</button>
+	    </div>
+	    
+	    <h2>Targets</h2>    
+	    <div class="field"> 
+	      <label>Target</label>
+	      <input id="target" type="text" />
+	    </div>
+	    <div class="field"> 
+	      <button id="btn_searchTarget">Search Target:</button>
+	    </div>
+	    <div id="legendContainer">
+			<h2>Legend</h2>
+			<ul id="legend">
+			</ul>
+		</div>
+		<div id="constraintContainer">
+			<h2>Constraints</h2>
+			<div id="constaintInputContainer">
+				
+				<label>Select Target 1:</label>
+				<select id="constaintTarget1">
+				</select>
+				<br/>
+				<label>Select Target 2:</label>
+				<select id="constaintTarget2">
+				</select>
+				<br/>
+				<label>Distance</label>
+				<input id="constraintDistance" type="text"/>
+				<button id="btn_addConstraint">Add Constraint</button>
+			</div>
+			<ul id="constraints">
+			</ul>
+		</div>		    
+	</div>	
+	<div id="map_canvas"></div>
+	
+
+</body>
+</html>

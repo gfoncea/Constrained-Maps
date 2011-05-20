@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;MapsProject/WebContent/scripts/stringUtil.js&apos; to &apos;util.js&apos;" description="Rename resource &apos;stringUtil.js&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="WebContent/scripts/stringUtil.js" name="util.js" stamp="1305418421469" updateReferences="true"/>
+</session>

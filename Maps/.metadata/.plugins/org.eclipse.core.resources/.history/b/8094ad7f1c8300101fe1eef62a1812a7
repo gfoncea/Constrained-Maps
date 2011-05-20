@@ -1,0 +1,197 @@
+/**Written by George Foncea
+ * Date:April27, 2011
+ */
+$(document).ready(function(){
+	initialize();	
+	var set=Set();
+	set.add([1,2,3]);
+	
+});
+
+var map;
+var geocoder = new google.maps.Geocoder();
+
+var yahooAPIObj={
+			url:'http://local.yahooapis.com/LocalSearchService/V3/localSearch',
+			appid:'xmfQ9cfV34Em4f1iHaHuBqMn2kafKoSrDa1aigL_1tiksO.sTqpX_yeRRvXs2w--',
+			generateQueryString:function(options){
+				var queryString=String.format('appid={0}',encodeURIComponent(this.appid));
+				$.each(options,function(key,val){
+					queryString+= String.format('&{0}={1}',key,val);
+				});				
+				return this.url+'?'+queryString;
+			}
+};
+
+var DEFAULT_ZOOM=12;
+var DEFAULT_CENTER='San Francisco';
+var MAX_SEARCH_RESULTS=20;
+var searchAreaObj={
+		zoom:DEFAULT_ZOOM,
+		addressInputCenter:DEFAULT_CENTER,
+		latlngCenter:0,
+		updateMembers : function(){
+			this.addressInputCenter=$('#txt_center').val();
+			this.zoom=parseInt($('#txt_zoom').val());
+		}
+};
+
+var targets=(function(){
+	var targetLocationMap={};
+	return {
+		addTarget:function(targetKey){
+			targetLocationMap[targetKey]=[];			
+		},
+		addTargetLocation:function(targetKey,location){
+			targetLocationMap[targetKey].push(location);
+		},
+		getTargets:function(){
+			var targetList=[];
+			$.each(targetLocationMap,function(key,val){
+				targetList.push(key);
+			});
+			return targetList;
+		},
+		getTargetLocations:function(targetKey){
+			return targetLocationMap[targetKey];
+		},
+		//Finds all locations of a particular target, that are within radiusKM of latLngCenter
+		getAllTargetLocationsInRadius:function(targetKey,latlngCenter,radiusKM){
+			var locationsInRadius=[];
+			var distance;
+			var targetLocations=getTargetLocations(targetKey);
+			$.each(targetLocations,function(key,val){
+				distance=geoDistance(latlngCenter,val);
+				if(distance<=radiusKM) locationInRadius.push(val);
+			});
+			return locationsInRadius;
+		}
+	};
+}());
+
+
+var constraints=function(){
+	var constraintList=[];
+	return {
+		//Each contstraint has two targets, and a distance with unit km
+		addConstraint:function(constraint){
+			constraintList.push(constraint);
+		},
+		getConstrainedTargetLocations:function(){
+			var constrainedTargetSet=Set();
+			//For each constraint find all locations that match that constraint and add them to set
+			$.each(constraintList,function(index,constraint){
+				var target1Locations=targets.getTargetLocations(constraint.target1);
+				/*For this constraints target1 find all of its locations.
+				 * iterate through ecah of these locations and if it is within distance of
+				 * any of target2s locations add both to set */
+				$.each(target1Locations,function(index,target1Location){
+					var target2LocationsInDistance=getAllTargetLocationsInRadius(constraint.target2,
+												target1Location.latlngCenter,
+												constraint.distance);
+					
+				});
+				
+			});
+		}
+	};
+}();
+
+var markerIcons={
+		center:'http://maps.google.com/intl/en_us/mapfiles/ms/micons/blue-dot.png',
+		nextAvailable:function(){
+			var targetIcons=['http://maps.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png',
+			                 'http://maps.google.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png',
+			                 'http://maps.google.com/intl/en_us/mapfiles/ms/micons/purple-dot.png',
+			                 'http://maps.google.com/intl/en_us/mapfiles/ms/micons/red-dot.png',];
+			var index=0;
+			return function(){
+				if(index>=targetIcons.length) index=0;
+				return targetIcons[index++];
+			};
+		}()
+};
+
+function initialize(){
+	setMapArea();
+	addEventHandlers();
+}
+function initializeMap() {
+    var latlng = new google.maps.LatLng(-34.397, 150.644);
+    var myOptions = {
+      zoom: 8,
+      center: latlng,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    map = new google.maps.Map(document.getElementById('map_canvas'),
+        myOptions);
+}
+
+function addEventHandlers(){
+	$('#btn_setSearchArea').click(function(){
+			searchAreaObj.updateMembers();
+			setMapArea();
+	});
+	$('#btn_searchTarget').click(searchTargets);
+	
+}
+function setMapArea(){		
+	var geocodeOptions={'address': searchAreaObj.addressInputCenter};
+	//Resolve input address to Lat Long and then it as center of map
+	geocoder.geocode(geocodeOptions,
+					function(results,status){
+						searchAreaObj.latlngCenter=results[0].geometry.location;
+						var mapOptions={
+								center:searchAreaObj.latlngCenter,
+								zoom:searchAreaObj.zoom,
+								mapTypeId: google.maps.MapTypeId.ROADMAP
+						};
+						if(!map){ map = new google.maps.Map($('#map_canvas')[0],mapOptions);}
+						else{ map.setOptions(mapOptions);}	
+						
+						setCenterMarker();
+					}
+	);	
+}
+
+function setCenterMarker(){
+	var marker = new google.maps.Marker({
+	      position: searchAreaObj.latlngCenter, 
+	      map: map, 
+	      title:'Center',
+	      icon:markerIcons.center					    
+	});
+}
+
+function searchTargets(){	
+	var targetInputQuery=$('#target').val();
+	var currMarkerIcon=markerIcons.nextAvailable();
+	var url=yahooAPIObj.generateQueryString({
+							    'callback':'?',
+								'query':targetInputQuery,
+								'latitude':searchAreaObj.latlngCenter.lat(),
+								'longitude':searchAreaObj.latlngCenter.lng(),
+								'results':MAX_SEARCH_RESULTS,
+								'output':'json'});
+	
+	$.getJSON(url,
+			function(data){
+				var results=data.ResultSet.Result;
+				$.each(results,function(index,value){
+					var marker = new google.maps.Marker({
+					      position: new google.maps.LatLng(value.Latitude,value.Longitude), 
+					      map: map,
+					      icon:currMarkerIcon,
+					      title:String.format('{0} \n {1} \n {2} \n Distance:{3}',
+					    		  value.Title,value.Address,value.Phone,value.Distance)
+					});
+				});
+				addTargetToLegend({query:targetInputQuery,icon:currMarkerIcon});
+			});
+}
+
+function addTargetToLegend(target){
+	var newTargetHTML=String.format('<li><img src="{0}">{1}</li>',target.icon,target.query);
+	$('#legend').append(newTargetHTML);	
+}
+

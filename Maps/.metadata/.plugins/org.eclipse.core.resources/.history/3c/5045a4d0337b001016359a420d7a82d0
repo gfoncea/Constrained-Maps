@@ -1,0 +1,156 @@
+/**Written by George Foncea
+ * Date:April27, 2011
+ */
+$(document).ready(function(){
+	initialize();
+	
+	var myObj={};
+	myObj["George"]=[];
+	targets.addTarget("Starbucks");
+	targets.addTarget("Hotel");
+	targets.addTargetLocation("Starbucks",{lat:10,lng:20,title:"Location 1"});
+	targets.addTargetLocation("Starbucks",{lat:20,lng:30,title:"Location 2"});
+});
+
+var map;
+var geocoder = new google.maps.Geocoder();
+
+var yahooAPIObj={
+			url:'http://local.yahooapis.com/LocalSearchService/V3/localSearch',
+			appid:'xmfQ9cfV34Em4f1iHaHuBqMn2kafKoSrDa1aigL_1tiksO.sTqpX_yeRRvXs2w--',
+			generateQueryString:function(options){
+				var queryString=String.format('appid={0}',encodeURIComponent(this.appid));
+				$.each(options,function(key,val){
+					queryString+= String.format('&{0}={1}',key,val);
+				});				
+				return this.url+'?'+queryString;
+			}
+};
+
+var DEFAULT_ZOOM=12;
+var DEFAULT_CENTER='San Francisco';
+var MAX_SEARCH_RESULTS=20;
+var searchAreaObj={
+		zoom:DEFAULT_ZOOM,
+		addressInputCenter:DEFAULT_CENTER,
+		latlngCenter:0,
+		updateMembers : function(){
+			this.addressInputCenter=$('#txt_center').val();
+			this.zoom=parseInt($('#txt_zoom').val());
+		}
+};
+
+var targets=(function(){
+	var targetLocationMap={};
+	return {
+		addTarget:function(targetKey){
+			targetLocationMap[targeyKey]=[];
+		},
+		addTargetLocation:function(targetKey,location){
+			targetLocationMap[targetKey].push(location);
+		},
+		getTargets:function(){},
+		getTargetLocations:function(targetKey){},
+		getAllTargetLocationsInRadius:function(latlng,radiusKM){}
+	};
+}());
+var constraints;
+
+var markerIcons={
+		center:'http://maps.google.com/intl/en_us/mapfiles/ms/micons/blue-dot.png',
+		nextAvailable:function(){
+			var targetIcons=['http://maps.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png',
+			                 'http://maps.google.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png',
+			                 'http://maps.google.com/intl/en_us/mapfiles/ms/micons/purple-dot.png',
+			                 'http://maps.google.com/intl/en_us/mapfiles/ms/micons/red-dot.png',];
+			var index=0;
+			return function(){
+				if(index>=targetIcons.length) index=0;
+				return targetIcons[index++];
+			};
+		}()
+};
+
+function initialize(){
+	setMapArea();
+	addEventHandlers();
+}
+function initializeMap() {
+    var latlng = new google.maps.LatLng(-34.397, 150.644);
+    var myOptions = {
+      zoom: 8,
+      center: latlng,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    map = new google.maps.Map(document.getElementById('map_canvas'),
+        myOptions);
+}
+
+function addEventHandlers(){
+	$('#btn_setSearchArea').click(function(){
+			searchAreaObj.updateMembers();
+			setMapArea();
+	});
+	$('#btn_searchTarget').click(searchTargets);
+	
+}
+function setMapArea(){		
+	var geocodeOptions={'address': searchAreaObj.addressInputCenter};
+	//Resolve input address to Lat Long and then it as center of map
+	geocoder.geocode(geocodeOptions,
+					function(results,status){
+						searchAreaObj.latlngCenter=results[0].geometry.location;
+						var mapOptions={
+								center:searchAreaObj.latlngCenter,
+								zoom:searchAreaObj.zoom,
+								mapTypeId: google.maps.MapTypeId.ROADMAP
+						};
+						if(!map){ map = new google.maps.Map($('#map_canvas')[0],mapOptions);}
+						else{ map.setOptions(mapOptions);}	
+						
+						setCenterMarker();
+					}
+	);	
+}
+
+function setCenterMarker(){
+	var marker = new google.maps.Marker({
+	      position: searchAreaObj.latlngCenter, 
+	      map: map, 
+	      title:'Center',
+	      icon:markerIcons.center					    
+	});
+}
+
+function searchTargets(){	
+	var targetInputQuery=$('#target').val();
+	var currMarkerIcon=markerIcons.nextAvailable();
+	var url=yahooAPIObj.generateQueryString({
+							    'callback':'?',
+								'query':targetInputQuery,
+								'latitude':searchAreaObj.latlngCenter.lat(),
+								'longitude':searchAreaObj.latlngCenter.lng(),
+								'results':MAX_SEARCH_RESULTS,
+								'output':'json'});
+	
+	$.getJSON(url,
+			function(data){
+				var results=data.ResultSet.Result;
+				$.each(results,function(index,value){
+					var marker = new google.maps.Marker({
+					      position: new google.maps.LatLng(value.Latitude,value.Longitude), 
+					      map: map,
+					      icon:currMarkerIcon,
+					      title:String.format('{0} \n {1} \n {2} \n Distance:{3}',
+					    		  value.Title,value.Address,value.Phone,value.Distance)
+					});
+				});
+				addTargetToLegend({query:targetInputQuery,icon:currMarkerIcon});
+			});
+}
+
+function addTargetToLegend(target){
+	var newTargetHTML=String.format('<li><img src="{0}">{1}</li>',target.icon,target.query);
+	$('#legend').append(newTargetHTML);	
+}
+

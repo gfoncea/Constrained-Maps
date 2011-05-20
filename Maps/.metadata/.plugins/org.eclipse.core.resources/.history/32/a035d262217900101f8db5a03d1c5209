@@ -1,0 +1,152 @@
+/**Written by George Foncea
+ * Date:April27, 2011
+ */
+$(document).ready(function(){
+	initialize();
+});
+
+var map;
+var geocoder = new google.maps.Geocoder();
+
+var yahooAPIObj={
+			url:'http://local.yahooapis.com/LocalSearchService/V3/localSearch',
+			appid:'xmfQ9cfV34Em4f1iHaHuBqMn2kafKoSrDa1aigL_1tiksO.sTqpX_yeRRvXs2w--',
+			generateQueryString:function(options){
+				var queryString='appid='+encodeURIComponent(this.appid);
+				$.each(options,function(key,val){
+					queryString+= ('&'+key+'='+val);
+				});				
+				return this.url+'?'+queryString;
+			}
+};
+
+var DEFAULT_ZOOM=10;
+var DEFAULT_CENTER='Toronto';
+var searchAreaObj={
+		zoom:DEFAULT_ZOOM,
+		addressInputCenter:DEFAULT_CENTER,
+		latlngCenter:0,
+		updateMembers : function(){
+			this.addressInputCenter=$('#txt_center').val();
+			this.zoom=parseInt($('#txt_zoom').val());
+		}
+};
+
+var target=function(){
+	return {
+		addressInput:'',
+		latLanList:new Array()
+	};
+};
+
+var markerIcons={
+		center:'http://maps.google.com/intl/en_us/mapfiles/ms/micons/blue-dot.png',
+		nextAvailable:function(){
+			var targetIcons=['http://maps.google.com/intl/en_us/mapfiles/ms/micons/green-dot.png',
+			                 'http://maps.google.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png',
+			                 'http://maps.google.com/intl/en_us/mapfiles/ms/micons/purple-dot.png',
+			                 'http://maps.google.com/intl/en_us/mapfiles/ms/micons/red-dot.png',];
+			var index=0;
+			return function(){
+				if(index>=targetIcons.length) index=0;
+				return targetIcons[index++];
+			};
+		}()
+};
+
+function initialize(){
+	//initializeMap();
+	setMapArea();
+	addEventHandlers();
+}
+function initializeMap() {
+    var latlng = new google.maps.LatLng(-34.397, 150.644);
+    var myOptions = {
+      zoom: 8,
+      center: latlng,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    map = new google.maps.Map(document.getElementById('map_canvas'),
+        myOptions);
+}
+
+function addEventHandlers(){
+	$('#btn_setSearchArea').click(function(){
+			searchAreaObj.updateMembers();
+			setMapArea();
+	});
+	$('#btn_searchTarget').click(searchTargets);
+	
+}
+
+function searchTargets(){
+	
+	var targetInputQuery=$('#target').val();
+	var currMarkerIcon=markerIcons.nextAvailable();
+	var url=yahooAPIObj.url+'?callback=?'
+	
+	$('#target').val(url);
+	
+	$.getJSON(url,			
+			{
+			'appid':'YahooDemo',
+			'query':'Italian Restaurant',
+			'latitude':searchAreaObj.latlngCenter.lat(),
+			'longitude':searchAreaObj.latlngCenter.lng(),
+			'output':'json'},
+			function(data){
+				var results=data.ResultSet.Result;
+			});
+	
+	
+	/*$('#target').each(function(index){
+		targetInputAddress=$(this).val();
+		currMarkerIcon=markerIcons.nextAvailable();
+		var geocodeOptions={'address': targetInputAddress,'bounds':map.getBounds()};
+		
+		geocoder.geocode(geocodeOptions,
+				function(results, status){
+					if(status=='OK'){
+						var marker = new google.maps.Marker({
+						      position: results[0].geometry.location, 
+						      map: map, 
+						      icon:currMarkerIcon					    
+						});
+					}				
+				}
+		);
+	});*/
+}
+
+function processSearchResults(data){
+	alert('sucess');
+}
+
+function setMapArea(){		
+	var geocodeOptions={'address': searchAreaObj.addressInputCenter};
+	//Resolve input address to Lat Long and then it as center of map
+	geocoder.geocode(geocodeOptions,
+					function(results,status){
+						searchAreaObj.latlngCenter=results[0].geometry.location;
+						var mapOptions={
+								center:searchAreaObj.latlngCenter,
+								zoom:searchAreaObj.zoom,
+								mapTypeId: google.maps.MapTypeId.ROADMAP
+						};
+						if(!map){ map = new google.maps.Map($('#map_canvas')[0],mapOptions);}
+						else{ map.setOptions(mapOptions);}	
+						
+						setCenterMarker();
+					}
+	);	
+}
+
+function setCenterMarker(){
+	var marker = new google.maps.Marker({
+	      position: searchAreaObj.latlngCenter, 
+	      map: map, 
+	      title:'Center',
+	      icon:markerIcons.center					    
+	});
+}
+
